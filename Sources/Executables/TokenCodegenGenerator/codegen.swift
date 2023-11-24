@@ -49,32 +49,35 @@ enum CodegenError: Error {
 
 func generateCode(with input: CodegenInput) throws -> String {
     let code = try generateSourceFileSyntax(from: input)
+    let formattedCode = code.formatted()
 
-    guard !code.hasWarning else {
+    guard !formattedCode.hasWarning else {
         throw CodegenError.codeHasWarnings
     }
 
-    guard !code.hasError else {
+    guard !formattedCode.hasError else {
         throw CodegenError.codeHasErrors
     }
 
-    return code.description
+    return formattedCode.description
 }
 
 private func generateSourceFileSyntax(from input: CodegenInput) throws -> SourceFileSyntax {
     try SourceFileSyntax {
         generateImport()
-        generateSwiftUIExtensions()
-        try generateSemanticTopLevelEnum(from: input)
         generateNumberTopLevelEnum(with: input.spacing)
+            .with(\.leadingTrivia, .newlines(2))
         generateNumberTopLevelEnum(with: input.radius)
+            .with(\.leadingTrivia, .newlines(2))
+        try generateSemanticTopLevelEnum(from: input)
+            .with(\.leadingTrivia, .newlines(2))
+        generateSwiftUIExtensions()
+            .with(\.leadingTrivia, .newlines(2))
     }
 }
 
 private func generateImport() -> ImportDeclSyntax {
-    let importPath = ImportPathComponentListSyntax {
-        .init(leadingTrivia: .space, name: .identifier("SwiftUI"), trailingTrivia: .newline)
-    }
+    let importPath = ImportPathComponentListSyntax { .init(name: .identifier("SwiftUI")) }
 
     return ImportDeclSyntax(importKeyword: .keyword(.import), path: importPath)
 }
@@ -120,16 +123,15 @@ private func generateSemanticTopLevelEnum(from input: CodegenInput) throws -> En
         try MemberBlockItemListSyntax {
             for (enumName, category) in combinedData {
                 try generateSemanticEnum(for: enumName, category: category)
+                    .with(\.leadingTrivia, .newlines(2))
             }
         }
     }
 
     return try EnumDeclSyntax(
-        leadingTrivia: .newline,
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
         name: .identifier("TokenColors", leadingTrivia: .space, trailingTrivia: .space),
-        memberBlockBuilder: memberBlockBuilder,
-        trailingTrivia: .newline
+        memberBlockBuilder: memberBlockBuilder
     )
 }
 
@@ -143,11 +145,9 @@ private func generateNumberTopLevelEnum(with input: NumberInput) -> EnumDeclSynt
     }
 
     return EnumDeclSyntax(
-        leadingTrivia: .newline,
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
         name: .identifier(input.identifier, leadingTrivia: .space, trailingTrivia: .space),
-        memberBlockBuilder: memberBlockBuilder,
-        trailingTrivia: .newline
+        memberBlockBuilder: memberBlockBuilder
     )
 }
 
@@ -163,11 +163,11 @@ private func generateSemanticEnum(
                 lightColorInfo: info.light,
                 darkColorInfo: info.dark
             )
+            .with(\.leadingTrivia, .newlines(2))
         }
     }
 
     return EnumDeclSyntax(
-        leadingTrivia: .newlines(2),
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
         name: .identifier(name.toPascalCase(), leadingTrivia: .space, trailingTrivia: .space),
         memberBlock: memberBlock
@@ -179,10 +179,8 @@ private func generateNumberVariable(for name: String, info: NumberInfo) -> DeclS
 
     return DeclSyntax(
     """
-    \n
     /// \(raw: Int(info.value))pt
     public static let \(raw: variableName) = CGFloat(\(raw: info.value))
-    \n
     """
     )
 }
@@ -205,13 +203,13 @@ private func generateSemanticVariable(
 
     return DeclSyntax(
         """
-        \n
-        public static let \(raw: variableName) = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .light
-                ? UIColor(red: \(raw: lightRgba.red), green: \(raw: lightRgba.green), blue: \(raw: lightRgba.blue), alpha: \(raw: lightRgba.alpha))
-                : UIColor(red: \(raw: darkRgba.red), green: \(raw: darkRgba.green), blue: \(raw: darkRgba.blue), alpha: \(raw: darkRgba.alpha))
-        })
-        \n
+        public static let \(raw: variableName) = UIColor(
+            dynamicProvider: {
+                $0.userInterfaceStyle == .light
+                    ? UIColor(red: \(raw: lightRgba.red), green: \(raw: lightRgba.green), blue: \(raw: lightRgba.blue), alpha: \(raw: lightRgba.alpha))
+                    : UIColor(red: \(raw: darkRgba.red), green: \(raw: darkRgba.green), blue: \(raw: darkRgba.blue), alpha: \(raw: darkRgba.alpha))
+            }
+        )
         """
     )
 }
