@@ -23,13 +23,17 @@ struct RGBA {
 
 typealias ColorData = [String: [String: ColorInfo]]
 
-struct NumberInfo: Decodable {
+struct NumberInfo: Decodable, Comparable {
     let type: String
     let value: Double
 
     enum CodingKeys: String, CodingKey {
         case type = "$type"
         case value = "$value"
+    }
+
+    static func < (lhs: NumberInfo, rhs: NumberInfo) -> Bool {
+        lhs.value < rhs.value
     }
 }
 
