@@ -4,7 +4,7 @@ Swift Package Manager (SPM) package responsible for creating `Swift` code based 
 
 Example usage and the expected spec of the `JSON` files can be found at `/Sources/MEGADesignToken`.
 
-Available enums (namespaces) containing tokens: `MEGADesignTokenDarkColors, MEGADesignTokenLightColors, MEGADesignTokenSpacing and MEGADesignTokenRadius`.
+Available enums (namespaces) containing tokens: `TokenColors, TokenSpacing and TokenRadius`.
 
 > ⚠️ **NOTE**: Only the semantic palette is exposed as code
 
@@ -17,10 +17,10 @@ After adding `MEGADesignToken` as a package dependency, use it as:
 ```swift
 import MEGADesignToken
 
-let darkColorExample = MEGADesignTokenDarkColors.Background.backgroundBlur // UIColor
-let lightColorExample = MEGADesignTokenLightColors.Background.backgroundBlur // UIColor
-let spacingExample = MEGADesignTokenSpacing._1 // CGFloat
-let radiusExample = MEGADesignTokenRadius.small // CGFloat
+let uiKitColorExample = TokenColors.Background.blur // UIColor
+let swiftUIColorExample = TokenColors.Button.brandPressed.swiftUI // Color
+let spacingExample = TokenSpacing._1 // CGFloat
+let radiusExample = TokenRadius.small // CGFloat
 ```
 
 ### Custom palette
