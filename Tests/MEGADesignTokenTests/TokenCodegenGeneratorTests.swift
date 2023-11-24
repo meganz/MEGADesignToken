@@ -223,7 +223,7 @@ final class TokenCodegenGeneratorTests: XCTestCase {
     }
 
     func testSanitizeSemanticVariableName_removesExtraneousInformation() {
-        XCTAssertEqual("--color-foo-bar".sanitizeSemanticVariableName(), "fooBar")
+        XCTAssertEqual("--color-parent-foo-bar".sanitizeSemanticVariableName(with: "parent"), "fooBar")
     }
 
     func testSanitizeNumberVariableName_withNumericString_prependsUnderscore() {

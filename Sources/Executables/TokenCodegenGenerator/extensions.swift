@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 extension String {
     func toCGFloat() -> CGFloat? {
@@ -42,11 +43,24 @@ extension String {
             .lowercased()
     }
 
-    func sanitizeSemanticVariableName() -> String {
-        self // Semantic colors have a format of '--color-foo-bar', so we'll make it 'fooBar'
-            .deletingPrefix("--color-")
+    func sanitizeSemanticVariableName(with parentName: String) -> String {
+        self
+            .deletingPrefix("--color-") // Semantic colors have a format of '--color-foo-bar', so we'll make it 'fooBar'
+            .removeSubstringIfNotWholeWord(parentName)
             .replacingOccurrences(of: "-", with: " ")
             .toCamelCase()
+    }
+
+    func removeSubstringIfNotWholeWord(_ substringToRemove: String) -> String {
+        if self.lowercased() == substringToRemove.lowercased() {
+            return self
+        } else {
+            return self.replacingOccurrences(
+                of: substringToRemove,
+                with: "",
+                options: .caseInsensitive
+            )
+        }
     }
 
     func sanitizeNumberVariableName() -> String {

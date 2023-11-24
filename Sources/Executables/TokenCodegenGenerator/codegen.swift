@@ -22,9 +22,9 @@ enum NumberInput {
     var identifier: String {
         switch self {
         case .radius:
-            return "MEGADesignTokenRadius"
+            return "TokenRadius"
         case .spacing:
-            return "MEGADesignTokenSpacing"
+            return "TokenSpacing"
         }
     }
 }
@@ -39,15 +39,6 @@ enum SemanticInput {
             return data
         }
     }
-
-    var identifier: String {
-        switch self {
-        case .dark:
-            return "MEGADesignTokenDarkColors"
-        case .light:
-            return "MEGADesignTokenLightColors"
-        }
-    }
 }
 
 enum CodegenError: Error {
@@ -58,81 +49,125 @@ enum CodegenError: Error {
 
 func generateCode(with input: CodegenInput) throws -> String {
     let code = try generateSourceFileSyntax(from: input)
+    let formattedCode = code.formatted()
 
-    guard !code.hasWarning else {
+    guard !formattedCode.hasWarning else {
         throw CodegenError.codeHasWarnings
     }
 
-    guard !code.hasError else {
+    guard !formattedCode.hasError else {
         throw CodegenError.codeHasErrors
     }
 
-    return code.description
+    return formattedCode.description
 }
 
 private func generateSourceFileSyntax(from input: CodegenInput) throws -> SourceFileSyntax {
     try SourceFileSyntax {
         generateImport()
-        try generateSemanticTopLevelEnum(with: input.dark)
-        try generateSemanticTopLevelEnum(with: input.light)
         generateNumberTopLevelEnum(with: input.spacing)
+            .with(\.leadingTrivia, .newlines(2))
         generateNumberTopLevelEnum(with: input.radius)
+            .with(\.leadingTrivia, .newlines(2))
+        try generateSemanticTopLevelEnum(from: input)
+            .with(\.leadingTrivia, .newlines(2))
+        generateSwiftUIExtensions()
+            .with(\.leadingTrivia, .newlines(2))
     }
 }
 
 private func generateImport() -> ImportDeclSyntax {
-    let importPath = ImportPathComponentListSyntax {
-        .init(leadingTrivia: .space, name: .identifier("UIKit"), trailingTrivia: .newline)
-    }
+    let importPath = ImportPathComponentListSyntax { .init(name: .identifier("SwiftUI")) }
 
     return ImportDeclSyntax(importKeyword: .keyword(.import), path: importPath)
 }
 
-private func generateSemanticTopLevelEnum(with input: SemanticInput) throws -> EnumDeclSyntax {
+private func generateSwiftUIExtensions() -> DeclSyntax {
+    DeclSyntax(stringLiteral:
+        """
+        public extension UIColor {
+            var swiftUI: Color {
+                if #available(iOS 15, *) {
+                    Color(uiColor: self)
+                } else {
+                    Color(self)
+                }
+            }
+        }
+        """
+    )
+}
+
+private func mergeColorData(
+    lightData: ColorData,
+    darkData: ColorData
+) -> [String: [String: (light: ColorInfo, dark: ColorInfo)]] {
+    var mergedData = [String: [String: (light: ColorInfo, dark: ColorInfo)]]()
+
+    for (key, lightValues) in lightData {
+        guard let darkValues = darkData[key] else { continue }
+
+        for (innerKey, lightColorInfo) in lightValues {
+            if let darkColorInfo = darkValues[innerKey] {
+                mergedData[key, default: [:]][innerKey] = (light: lightColorInfo, dark: darkColorInfo)
+            }
+        }
+    }
+
+    return mergedData
+}
+
+private func generateSemanticTopLevelEnum(from input: CodegenInput) throws -> EnumDeclSyntax {
+    let combinedData = mergeColorData(lightData: input.light.data, darkData: input.dark.data)
     let memberBlockBuilder = {
         try MemberBlockItemListSyntax {
-            for (enumName, category) in input.data {
+            for (enumName, category) in combinedData.sorted(by: { $0.key < $1.key }) {
                 try generateSemanticEnum(for: enumName, category: category)
+                    .with(\.leadingTrivia, .newlines(2))
             }
         }
     }
 
     return try EnumDeclSyntax(
-        leadingTrivia: .newline,
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
-        name: .identifier(input.identifier, leadingTrivia: .space, trailingTrivia: .space),
-        memberBlockBuilder: memberBlockBuilder,
-        trailingTrivia: .newline
+        name: .identifier("TokenColors", leadingTrivia: .space, trailingTrivia: .space),
+        memberBlockBuilder: memberBlockBuilder
     )
 }
 
 private func generateNumberTopLevelEnum(with input: NumberInput) -> EnumDeclSyntax {
     let memberBlockBuilder = {
         MemberBlockItemListSyntax {
-            for (name, info) in input.data {
+            for (name, info) in input.data.sorted(by: { $0.value < $1.value }) {
                 generateNumberVariable(for: name, info: info)
             }
         }
     }
 
     return EnumDeclSyntax(
-        leadingTrivia: .newline,
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
         name: .identifier(input.identifier, leadingTrivia: .space, trailingTrivia: .space),
-        memberBlockBuilder: memberBlockBuilder,
-        trailingTrivia: .newline
+        memberBlockBuilder: memberBlockBuilder
     )
 }
 
-private func generateSemanticEnum(for name: String, category: [String: ColorInfo]) throws -> EnumDeclSyntax {
+private func generateSemanticEnum(
+    for name: String,
+    category: [String: (light: ColorInfo, dark: ColorInfo)]
+) throws -> EnumDeclSyntax {
     let memberBlock = try MemberBlockSyntax {
-        for (name, info) in category {
-            try generateSemanticVariable(for: name, with: info)
+        for (variableName, info) in category.sorted(by: { $0.key < $1.key }) {
+            try generateSemanticVariable(
+                for: variableName,
+                parentName: name,
+                lightColorInfo: info.light,
+                darkColorInfo: info.dark
+            )
+            .with(\.leadingTrivia, .newlines(2))
         }
     }
 
     return EnumDeclSyntax(
-        leadingTrivia: .newlines(2),
         modifiers: [.init(name: .keyword(.public, trailingTrivia: .space))],
         name: .identifier(name.toPascalCase(), leadingTrivia: .space, trailingTrivia: .space),
         memberBlock: memberBlock
@@ -144,25 +179,37 @@ private func generateNumberVariable(for name: String, info: NumberInfo) -> DeclS
 
     return DeclSyntax(
     """
-    \n
+    /// \(raw: Int(info.value))pt
     public static let \(raw: variableName) = CGFloat(\(raw: info.value))
-    \n
     """
     )
 }
 
-private func generateSemanticVariable(for name: String, with info: ColorInfo) throws -> DeclSyntax {
-    guard let rbga = info.rgba else {
-        throw CodegenError.inputIsWrong(reason: "Codegen: unable to parse Color(\(name))")
+private func generateSemanticVariable(
+    for name: String,
+    parentName: String,
+    lightColorInfo: ColorInfo,
+    darkColorInfo: ColorInfo
+) throws -> DeclSyntax {
+    guard let lightRgba = lightColorInfo.rgba else {
+        throw CodegenError.inputIsWrong(reason: "Codegen: unable to parse light version of Color(\(name))")
     }
 
-    let variableName = name.sanitizeSemanticVariableName()
+    guard let darkRgba = darkColorInfo.rgba else {
+        throw CodegenError.inputIsWrong(reason: "Codegen: unable to parse dark version of Color(\(name))")
+    }
+
+    let variableName = name.sanitizeSemanticVariableName(with: parentName)
 
     return DeclSyntax(
-    """
-    \n
-    public static let \(raw: variableName) = UIColor(red: \(raw: rbga.red), green: \(raw: rbga.green), blue: \(raw: rbga.blue), alpha: \(raw: rbga.alpha))
-    \n
-    """
+        """
+        public static let \(raw: variableName) = UIColor(
+            dynamicProvider: {
+                $0.userInterfaceStyle == .light
+                    ? UIColor(red: \(raw: lightRgba.red), green: \(raw: lightRgba.green), blue: \(raw: lightRgba.blue), alpha: \(raw: lightRgba.alpha))
+                    : UIColor(red: \(raw: darkRgba.red), green: \(raw: darkRgba.green), blue: \(raw: darkRgba.blue), alpha: \(raw: darkRgba.alpha))
+            }
+        )
+        """
     )
 }
