@@ -121,7 +121,7 @@ private func generateSemanticTopLevelEnum(from input: CodegenInput) throws -> En
     let combinedData = mergeColorData(lightData: input.light.data, darkData: input.dark.data)
     let memberBlockBuilder = {
         try MemberBlockItemListSyntax {
-            for (enumName, category) in combinedData {
+            for (enumName, category) in combinedData.sorted(by: { $0.key < $1.key }) {
                 try generateSemanticEnum(for: enumName, category: category)
                     .with(\.leadingTrivia, .newlines(2))
             }
@@ -156,7 +156,7 @@ private func generateSemanticEnum(
     category: [String: (light: ColorInfo, dark: ColorInfo)]
 ) throws -> EnumDeclSyntax {
     let memberBlock = try MemberBlockSyntax {
-        for (variableName, info) in category {
+        for (variableName, info) in category.sorted(by: { $0.key < $1.key }) {
             try generateSemanticVariable(
                 for: variableName,
                 parentName: name,
