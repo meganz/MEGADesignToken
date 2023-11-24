@@ -6,7 +6,8 @@ Example usage and the expected spec of the `JSON` files can be found at `/Source
 
 Available enums (namespaces) containing tokens: `TokenColors, TokenSpacing and TokenRadius`.
 
-> ⚠️ **NOTE**: Only the semantic palette is exposed as code
+> ⚠️ **NOTE**: Only the semantic palette is exposed as code.
+> ⚪️⚫️ **NOTE**: The Dark and Light versions of the color will be combined into a single UIColor token using Dynamic Provider, thus it will be handled automatically when user changes to Light/Dark mode.
 
 ## Usage
 
