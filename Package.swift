@@ -31,17 +31,13 @@ let package = Package(
             capability: .buildTool(),
             dependencies: ["TokenCodegenGenerator"]
         ),
-        .executableTarget(
+        .target(
             name: "TokenCodegenGenerator",
             dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax")
             ],
             path: "Sources/Executables/TokenCodegenGenerator"
-        ),
-        .testTarget(
-            name: "MEGADesignTokenTests",
-            dependencies: ["MEGADesignToken", "TokenCodegenGenerator"]
         )
     ]
 )
