@@ -22,6 +22,7 @@ let uiKitColorExample = TokenColors.Background.blur // UIColor
 let swiftUIColorExample = TokenColors.Button.brandPressed.swiftUI // Color
 let spacingExample = TokenSpacing._1 // CGFloat
 let radiusExample = TokenRadius.small // CGFloat
+let nsKitColorExample = TokenColors.Background.surface1 // NSColor
 ```
 
 ### Custom palette

@@ -85,6 +85,17 @@ private func generateImport() -> ImportDeclSyntax {
 private func generateSwiftUIExtensions() -> DeclSyntax {
     DeclSyntax(stringLiteral:
         """
+        #if os(macOS)
+        public extension NSColor {
+            var swiftUI: Color {
+                if #available(macOS 12, *) {
+                    Color(nsColor: self)
+                } else {
+                    Color(self)
+                }
+            }
+        }
+        #else
         public extension UIColor {
             var swiftUI: Color {
                 if #available(iOS 15, *) {
@@ -94,6 +105,7 @@ private func generateSwiftUIExtensions() -> DeclSyntax {
                 }
             }
         }
+        #endif
         """
     )
 }
@@ -203,6 +215,18 @@ private func generateSemanticVariable(
 
     return DeclSyntax(
         """
+        #if os(macOS)
+        public static let \(raw: variableName) = NSColor(
+            name: nil,
+            dynamicProvider: {
+                if $0.name == .aqua || $0.name == .vibrantLight || $0.name == .accessibilityHighContrastAqua || $0.name == .accessibilityHighContrastVibrantLight {
+                    NSColor(red: \(raw: lightRgba.red), green: \(raw: lightRgba.green), blue: \(raw: lightRgba.blue), alpha: \(raw: lightRgba.alpha))
+                } else {
+                    NSColor(red: \(raw: darkRgba.red), green: \(raw: darkRgba.green), blue: \(raw: darkRgba.blue), alpha: \(raw: darkRgba.alpha))
+                }
+            }
+        )
+        #else
         public static let \(raw: variableName) = UIColor(
             dynamicProvider: {
                 $0.userInterfaceStyle == .light
@@ -210,6 +234,7 @@ private func generateSemanticVariable(
                     : UIColor(red: \(raw: darkRgba.red), green: \(raw: darkRgba.green), blue: \(raw: darkRgba.blue), alpha: \(raw: darkRgba.alpha))
             }
         )
+        #endif
         """
     )
 }
