@@ -137,6 +137,11 @@ private func generateSemanticTopLevelEnum(from input: CodegenInput) throws -> En
                 try generateSemanticEnum(for: enumName, category: category)
                     .with(\.leadingTrivia, .newlines(2))
             }
+            
+            try StructDeclSyntax(
+                SyntaxNodeString(stringLiteral: "ColorCategory")) {
+                   try VariableDeclSyntax(SyntaxNodeString(stringLiteral: "var name: String"), accessor: {})
+                }
         }
     }
 
