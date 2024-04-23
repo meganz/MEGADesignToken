@@ -2,7 +2,7 @@ import Foundation
 
 let arguments = ProcessInfo().arguments
 
-guard arguments.count == 3 else {
+guard arguments.count == 1 else {
     print("Error: wrong arguments")
     abort(.wrongArguments)
 }
@@ -17,9 +17,9 @@ guard output.hasSuffix(".swift") else {
 do {
     let parsedInput = try parseInput(input)
 
-    let (coreURL, semanticDarkURL, semanticLightURL) = (parsedInput.core, parsedInput.semanticDark, parsedInput.semanticLight)
+    let tokenURL = parsedInput.tokens
 
-    let coreJSONObject = try extractJSON(from: coreURL)
+    let coreJSONObject = try extractJSON(from: tokenURL)
 
     let coreColorMap = try generateCoreColorMap(with: coreJSONObject)
 
@@ -27,9 +27,9 @@ do {
 
     let radiusInput = try generateRadiusInput(with: coreJSONObject)
 
-    let semanticDarkInput = try generateSemanticInput(with: semanticDarkURL, using: coreColorMap, isDark: true)
+    let semanticDarkInput = try generateSemanticInput(with: tokenURL, using: coreColorMap, isDark: true)
 
-    let semanticLightInput = try generateSemanticInput(with: semanticLightURL, using: coreColorMap, isDark: false)
+    let semanticLightInput = try generateSemanticInput(with: tokenURL, using: coreColorMap, isDark: false)
 
     let codegenInput: CodegenInput = .init(dark: semanticDarkInput, light: semanticLightInput, spacing: spacingInput, radius: radiusInput)
 
@@ -52,12 +52,12 @@ enum AbortReason: Int32 {
 }
 
 enum ExpectedInput: String {
-    case core = "core.json"
-    case semanticDark = "Semantic tokens.Dark.tokens.json"
-    case semanticLight = "Semantic tokens.Light.tokens.json"
+    case tokens = "tokens.json"
+//    case semanticDark = "Semantic tokens.Dark.tokens.json"
+//    case semanticLight = "Semantic tokens.Light.tokens.json"
 
     static var description: String {
-        "[\(semanticLight.rawValue), \(semanticDark.rawValue), \(core.rawValue)]"
+        "[\(tokens.rawValue)]"
     }
 }
 
@@ -84,12 +84,13 @@ enum CoreTokensKey: String {
 }
 
 private func extractCoreTokensJSONObject(from coreJSONObject: [String: Any], with key: CoreTokensKey) throws -> [String: Any] {
-    guard let coreTokenJSONObject = coreJSONObject[key.rawValue] as? [String: Any] else {
-        print("Error: couldn't find '\(key.rawValue)' key in \(ExpectedInput.core.rawValue) input")
+    guard let coreTokenJSONObject = coreJSONObject["Core/Main"] as? [String: Any],
+          let x = coreTokenJSONObject[key.rawValue] as? [String: Any] else {
+        print("Error: couldn't find '\(key.rawValue)' key in \(ExpectedInput.tokens.rawValue) input")
         abort(.badInputJSON)
     }
 
-    return coreTokenJSONObject
+    return x
 }
 
 private func generateCoreColorMap(with coreJSONObject: [String: Any]) throws -> [String: ColorInfo] {

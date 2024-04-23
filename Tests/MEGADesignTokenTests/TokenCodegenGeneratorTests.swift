@@ -8,9 +8,9 @@ final class TokenCodegenGeneratorTests: XCTestCase {
         let input = "[Path/To/Semantic tokens.Light.tokens.json, Path/To/Semantic tokens.Dark.tokens.json, Path/To/core.json]"
         let parsed = try parseInput(input)
 
-        XCTAssertEqual(parsed.core, URL(fileURLWithPath: "Path/To/core.json"))
-        XCTAssertEqual(parsed.semanticDark, URL(fileURLWithPath: "Path/To/Semantic tokens.Dark.tokens.json"))
-        XCTAssertEqual(parsed.semanticLight, URL(fileURLWithPath: "Path/To/Semantic tokens.Light.tokens.json"))
+        XCTAssertEqual(parsed.tokens, URL(fileURLWithPath: "Path/To/tokens.json"))
+//        XCTAssertEqual(parsed.semanticDark, URL(fileURLWithPath: "Path/To/Semantic tokens.Dark.tokens.json"))
+//        XCTAssertEqual(parsed.semanticLight, URL(fileURLWithPath: "Path/To/Semantic tokens.Light.tokens.json"))
     }
 
     func testParseInput_whenGivenInvalidArgumentCount_throwsWrongArgumentsError() throws {
