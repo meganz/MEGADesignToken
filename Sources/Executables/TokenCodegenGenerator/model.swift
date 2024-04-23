@@ -4,17 +4,12 @@ struct ColorInfo: Decodable {
     let type: String
     var value: String
 
-    enum CodingKeys: String, CodingKey {
-        case type = "$type"
-        case value = "$value"
-    }
-
     var rgba: RGBA? {
-        value.starts(with: "#") ? parseHex(value) : parseRGBA(value)
+        try? parseHex(value)
     }
 }
 
-struct RGBA {
+struct RGBA: Equatable {
     let red: CGFloat
     let green: CGFloat
     let blue: CGFloat
@@ -28,8 +23,15 @@ struct NumberInfo: Decodable, Comparable {
     let value: Double
 
     enum CodingKeys: String, CodingKey {
-        case type = "$type"
-        case value = "$value"
+        case type
+        case value
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: .type)
+        let valueString = try container.decode(String.self, forKey: .value)
+        self.value = try parseNumber(valueString)
     }
 
     static func < (lhs: NumberInfo, rhs: NumberInfo) -> Bool {

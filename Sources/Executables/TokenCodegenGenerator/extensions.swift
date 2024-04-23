@@ -29,7 +29,7 @@ extension String {
         return String(self.dropFirst(prefix.count))
     }
 
-    func isNumeric() -> Bool{
+    func isNumeric() -> Bool {
         CharacterSet.decimalDigits.isSuperset(of: .init(charactersIn: self))
     }
 
