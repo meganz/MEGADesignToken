@@ -2,7 +2,7 @@ import Foundation
 
 let arguments = ProcessInfo().arguments
 
-guard arguments.count == 1 else {
+guard arguments.count == 2 else {
     print("Error: wrong arguments")
     abort(.wrongArguments)
 }
@@ -53,8 +53,6 @@ enum AbortReason: Int32 {
 
 enum ExpectedInput: String {
     case tokens = "tokens.json"
-//    case semanticDark = "Semantic tokens.Dark.tokens.json"
-//    case semanticLight = "Semantic tokens.Light.tokens.json"
 
     static var description: String {
         "[\(tokens.rawValue)]"

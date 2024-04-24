@@ -6,8 +6,6 @@ enum ParseInputError: Equatable, Error {
 
 struct ParseInputPayload {
     let tokens: URL
-//    let semanticDark: URL
-//    let semanticLight: URL
 }
 
 /// Parses a pseudo-array formatted string to extract and validate file paths for core, semantic dark, and semantic light tokens.
@@ -35,10 +33,6 @@ func parseInput(_ input: String) throws -> ParseInputPayload {
         switch input {
         case input where input.contains(ExpectedInput.tokens.rawValue):
             result[.tokens] = input
-//        case input where input.contains(ExpectedInput.semanticDark.rawValue):
-//            result[.semanticDark] = input
-//        case input where input.contains(ExpectedInput.semanticLight.rawValue):
-//            result[.semanticLight] = input
         default:
             break
         }
@@ -46,8 +40,6 @@ func parseInput(_ input: String) throws -> ParseInputPayload {
 
     guard
         let tokenPath = inputMap[.tokens]
-//        let semanticDarkPath = inputMap[.semanticDark],
-//        let semanticLightPath = inputMap[.semanticLight]
     else {
         throw ParseInputError.wrongArguments
     }
