@@ -5,12 +5,10 @@ final class TokenCodegenGeneratorTests: XCTestCase {
     // MARK: - Parser methods tests
 
     func testParseInput_whenGivenValidInput_returnsParseInputPayload() throws {
-        let input = "[Path/To/Semantic tokens.Light.tokens.json, Path/To/Semantic tokens.Dark.tokens.json, Path/To/core.json]"
+        let input = "[Path/To/tokens.json]"
         let parsed = try parseInput(input)
 
-        XCTAssertEqual(parsed.core, URL(fileURLWithPath: "Path/To/core.json"))
-        XCTAssertEqual(parsed.semanticDark, URL(fileURLWithPath: "Path/To/Semantic tokens.Dark.tokens.json"))
-        XCTAssertEqual(parsed.semanticLight, URL(fileURLWithPath: "Path/To/Semantic tokens.Light.tokens.json"))
+        XCTAssertEqual(parsed, URL(fileURLWithPath: "Path/To/tokens.json"))
     }
 
     func testParseInput_whenGivenInvalidArgumentCount_throwsWrongArgumentsError() throws {
@@ -22,82 +20,77 @@ final class TokenCodegenGeneratorTests: XCTestCase {
     }
 
     func testParseInput_whenGivenInvalidCorePath_throwsWrongArgumentsError() throws {
-        let input = "[Path/To/Semantic tokens.Light.tokens.json, Path/To/Semantic tokens.Dark.tokens.json, Path/To/somefile.json]"
+        let input = "[Path/To/somefile.json]"
 
         XCTAssertThrowsError(try parseInput(input)) { error in
             XCTAssertEqual(error as? ParseInputError, .wrongArguments)
         }
     }
 
-    func testParseRGBA_whenGivenValidRGBAInput_correctlyParses() throws {
-        let rgbaString = "rgba(255, 255, 255, 0.8000)"
-        let parsed = parseRGBA(rgbaString)
-
-        guard let parsed else {
-            XCTFail("Parsed RGBA should not be nil for valid input")
-            return
-        }
-
-        XCTAssertEqual(parsed.red, CGFloat(1.0), accuracy: 0.001, "Red component should be 1.0")
-        XCTAssertEqual(parsed.green, CGFloat(1.0), accuracy: 0.001, "Green component should be 1.0")
-        XCTAssertEqual(parsed.blue, CGFloat(1.0), accuracy: 0.001, "Blue component should be 1.0")
-        XCTAssertEqual(parsed.alpha, CGFloat(0.8), accuracy: 0.001, "Alpha component should be 0.8")
-    }
-
-    func testParseRGBA_whenGivenInvalidRGBAInput_returnsNil() throws {
-        let rgbaString = "not_rgba(255, 255, 255, 0.8)"
-        let parsed = parseRGBA(rgbaString)
-
-        XCTAssertNil(parsed, "Parsed RGBA should be nil for invalid input")
-    }
-
-    func testParseRGBA_whenGivenIncompleteRGBAInput_returnsNil() throws {
-        let rgbaString = "rgba(255, 255)"
-        let parsed = parseRGBA(rgbaString)
-
-        XCTAssertNil(parsed, "Parsed RGBA should be nil for incomplete input")
-    }
-
-    func testParseRGBA_whenGivenExtraComponentsInRGBAInput_returnsNil() throws {
-        let rgbaString = "rgba(255, 255, 255, 0.8, 0.9)"
-        let parsed = parseRGBA(rgbaString)
-
-        XCTAssertNil(parsed, "Parsed RGBA should be nil for input with extra components")
-    }
-
-    func testParseHex_whenGivenValid6DigitHex_correctlyParses() {
+    func testParseHex_whenGivenValid6DigitHex_correctlyParses() throws {
         let hexString = "#fffaf5"
-        let parsed = parseHex(hexString)
-
-        guard let parsed = parsed else {
-            XCTFail("Parsed RGBA should not be nil for valid input")
-            return
-        }
-
+        let parsed = try parseHex(hexString)
         XCTAssertEqual(parsed.red, CGFloat(1.0), accuracy: 0.001, "Red component should be 1.0")
         XCTAssertEqual(parsed.green, CGFloat(0.9804), accuracy: 0.001, "Green component should be approximately 0.9804")
         XCTAssertEqual(parsed.blue, CGFloat(0.9608), accuracy: 0.001, "Blue component should be approximately 0.9608")
         XCTAssertEqual(parsed.alpha, CGFloat(1.0), accuracy: 0.001, "Alpha component should be 1.0")
     }
 
-    func testParseHex_whenGivenInvalidHex_returnsNil() {
-        let hexString = "#zzzzzz"
-        let parsed = parseHex(hexString)
-        XCTAssertNil(parsed, "Parsed RGBA should be nil for invalid input")
+    func testParseHex_whenGivenValid8DigitHex_correctlyParses() throws {
+        let hexString = "#fffaf5cc"
+        let parsed = try parseHex(hexString)
+        XCTAssertEqual(parsed.red, CGFloat(1.0), accuracy: 0.001, "Red component should be 1.0")
+        XCTAssertEqual(parsed.green, CGFloat(0.9804), accuracy: 0.001, "Green component should be approximately 0.9804")
+        XCTAssertEqual(parsed.blue, CGFloat(0.9608), accuracy: 0.001, "Blue component should be approximately 0.9608")
+        XCTAssertEqual(parsed.alpha, CGFloat(0.8), accuracy: 0.001, "Alpha component should be 0.8")
     }
 
-    func testParseHex_whenGivenIncompleteHex_returnsNil() {
+    func testParseHex_whenGivenInvalidHex_throwsError() {
+        let hexString = "#zzzzzz"
+        XCTAssertThrowsError(try parseHex(hexString)) { error in
+            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputCharacters)
+        }
+    }
+
+    func testParseHex_whenGivenIncompleteHex_throwsError() {
         let hexString = "#fff"
-        let parsed = parseHex(hexString)
-        XCTAssertNil(parsed, "Parsed RGBA should be nil for incomplete input")
+        XCTAssertThrowsError(try parseHex(hexString)) { error in
+            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputLength)
+        }
+    }
+
+    func testParseHex_whenGivenEmptyString_throwsError() {
+        let hexString = ""
+        XCTAssertThrowsError(try parseHex(hexString)) { error in
+            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputLength)
+        }
+    }
+
+    func testParseNumber_withPxSuffix_parsesCorrectly() throws {
+        XCTAssertEqual(try parseNumber("44px"), 44.0)
+        XCTAssertEqual(try parseNumber("123.4px"), 123.4)
+    }
+
+    func testParseNumber_withoutSuffix_parsesCorrectly() throws {
+        XCTAssertEqual(try parseNumber("150"), 150.0)
+    }
+
+    func testParseNumber_whenInvalidInput_throwsError() {
+        XCTAssertThrowsError(try parseNumber("abcpx")) { error in
+            XCTAssertTrue(error is NumberDecodingError)
+        }
+
+        XCTAssertThrowsError(try parseNumber("123pxabc")) { error in
+            XCTAssertTrue(error is NumberDecodingError)
+        }
     }
 
     func testExtractFlatColorData_whenLeafNodes_parsesCorrectly() throws {
         let json: [String: Any] = [
             "Black opacity": [
                 "090": [
-                    "$type": "color",
-                    "$value": "rgba(0, 0, 0, 0.9000)"
+                    "type": "color",
+                    "value": "#000000e6"
                 ]
             ]
         ]
@@ -106,7 +99,7 @@ final class TokenCodegenGeneratorTests: XCTestCase {
 
         XCTAssertEqual(colorData.keys.count, 1)
         XCTAssertEqual(colorData["black opacity.090"]?.type, "color")
-        XCTAssertEqual(colorData["black opacity.090"]?.value, "rgba(0, 0, 0, 0.9000)")
+        XCTAssertEqual(colorData["black opacity.090"]?.value, "#000000e6")
     }
 
     func testExtractFlatColorData_whenNestedNodes_parsesCorrectly() throws {
@@ -114,8 +107,8 @@ final class TokenCodegenGeneratorTests: XCTestCase {
             "Secondary": [
                 "Orange": [
                     "100": [
-                        "$type": "color",
-                        "$value": "#ffead5"
+                        "type": "color",
+                        "value": "#ffead5"
                     ]
                 ]
             ]
@@ -140,14 +133,14 @@ final class TokenCodegenGeneratorTests: XCTestCase {
         let jsonObject: [String: Any] = [
             "Text": [
                 "--color-text-inverse": [
-                    "$type": "color",
-                    "$value": "{Secondary.Indigo.700}"
+                    "type": "color",
+                    "value": "{Secondary.Indigo.700}"
                 ]
             ],
             "Icon": [
                 "--color-icon-disable": [
-                    "$type": "color",
-                    "$value": "{Secondary.Blue.400}"
+                    "type": "color",
+                    "value": "{Secondary.Blue.400}"
                 ]
             ]
         ]
@@ -164,8 +157,8 @@ final class TokenCodegenGeneratorTests: XCTestCase {
         let jsonObject: [String: Any] = [
             "Text": [
                 "--color-text-inverse": [
-                    "$type": "color",
-                    "$value": "{NonExistentColor}"
+                    "type": "color",
+                    "value": "{NonExistentColor}"
                 ]
             ]
         ]

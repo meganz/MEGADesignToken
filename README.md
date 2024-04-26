@@ -30,9 +30,9 @@ let nsKitColorExample = TokenColors.Background.surface1 // NSColor
 If you want to use your custom palette, then you must:
 
 - Create a group (folder) under your target called `MEGADesignTokenResources`
-- Place the following `.json` resources in the group: `core.json`, `Semantic tokens.Dark.tokens.json` and `Semantic tokens.Light.tokens.json`
+- Place the following `.json` resource in the group: `tokens.json`
 
-> ⚠️ **NOTE**: The `.json` resources must respect the same name and format as the main application ones
+> ⚠️ **NOTE**: The `.json` resource must respect the same name and format as the main application ones
 
 - Under `Build Phases` of your target, add `TokenCodegen` in `Run Build Tool Plug-ins`
 
@@ -40,6 +40,6 @@ If you want to use your custom palette, then you must:
 
 ## Troubleshooting
 
-- `Cannot find 'MEGADesignToken*' in scope`
+- `Cannot find 'TokenColors/Spacing/Radius' in scope`
 
 The code is generated in a build tool plugin, so before start using the enums, first build your project.

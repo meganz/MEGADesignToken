@@ -4,21 +4,15 @@ enum ParseInputError: Equatable, Error {
     case wrongArguments
 }
 
-struct ParseInputPayload {
-    let core: URL
-    let semanticDark: URL
-    let semanticLight: URL
-}
-
-/// Parses a pseudo-array formatted string to extract and validate file paths for core, semantic dark, and semantic light tokens.
+/// Parses a pseudo-array formatted string to extract and validate the file path for the tokens.
 ///
-/// The function expects the input string to be formatted as a pseudo-array containing paths like so:
-/// "[Path/To/Semantic tokens.Light.tokens.json, Path/To/Semantic tokens.Dark.tokens.json, Path/To/core.json]"
+/// The function expects the input string to be formatted as a pseudo-array containing a single path like so:
+/// "[Path/To/tokens.json]"
 ///
 /// - Parameter input: The input string formatted as a pseudo-array.
-/// - Returns: A `ParseInputPayload` object containing the parsed and validated paths.
-/// - Throws: A `ParseInputError` if the number of arguments is incorrect or if any of the paths does not contain the expected file name.
-func parseInput(_ input: String) throws -> ParseInputPayload {
+/// - Returns: A `URL` containing the parsed and validated path.
+/// - Throws: A `ParseInputError` if the number of arguments is incorrect or if the path does not contain the expected file name.
+func parseInput(_ input: String) throws -> URL {
     let parsed = input
         .replacingOccurrences(of: "[\\[\\]]", with: "", options: .regularExpression, range: nil)
         .split(separator: ",")
@@ -27,97 +21,70 @@ func parseInput(_ input: String) throws -> ParseInputPayload {
                 .trimmingCharacters(in: .whitespaces)
         }
 
-    guard parsed.count == 3 else {
+    guard parsed.count == 1, let tokensPath = parsed.first, tokensPath.contains(ExpectedInput.tokens.rawValue) else {
         throw ParseInputError.wrongArguments
     }
 
-    let inputMap: [ExpectedInput: String] = parsed.reduce(into: [:]) { result, input in
-        switch input {
-        case input where input.contains(ExpectedInput.core.rawValue):
-            result[.core] = input
-        case input where input.contains(ExpectedInput.semanticDark.rawValue):
-            result[.semanticDark] = input
-        case input where input.contains(ExpectedInput.semanticLight.rawValue):
-            result[.semanticLight] = input
-        default:
-            break
-        }
-    }
-
-    guard
-        let corePath = inputMap[.core],
-        let semanticDarkPath = inputMap[.semanticDark],
-        let semanticLightPath = inputMap[.semanticLight]
-    else {
-        throw ParseInputError.wrongArguments
-    }
-
-    let mapped = [corePath, semanticDarkPath, semanticLightPath].map { URL(fileURLWithPath: $0) }
-
-    return .init(core: mapped[0], semanticDark: mapped[1], semanticLight: mapped[2])
+    return URL(fileURLWithPath: tokensPath)
 }
 
-///  Parses a given rbga (red, blue, green and alpha) string into a struct containing normalized rgba values.
-///
-///  - Parameters:
-///     - rgbaString: A string in the format: `rgba(255, 255, 255, 0.8000)`.
-///
-///  - Returns: A struct representing normalized rbga values of type `RGBA` or `nil` if the string can't be parsed.
-func parseRGBA(_ rgbaString: String) -> RGBA? {
-    guard let range = rgbaString.range(of: "^rgba\\((.*)\\)$", options: .regularExpression) else {
-        return nil
-    }
-
-    let sanitizedRgbaString = rgbaString[range]
-        .replacingOccurrences(of: "rgba(", with: "")
-        .replacingOccurrences(of: ")", with: "")
-
-    let rgbaComponents = sanitizedRgbaString
-        .split(separator: ",")
-        .compactMap {
-            String($0)
-                .trimmingCharacters(in: .whitespaces)
-                .toCGFloat()
-        }
-
-    guard rgbaComponents.count == 4 else {
-        return nil
-    }
-
-    let (red, blue, green, alpha) = (rgbaComponents[0], rgbaComponents[1], rgbaComponents[2], rgbaComponents[3])
-
-    // Normalization
-    return .init(red: red / 255.0, green: green / 255.0, blue: blue / 255.0, alpha: alpha)
+enum HexDecodingError: Error {
+    case invalidInputCharacters
+    case invalidInputLength
 }
 
-///  Parses a given hexadecimal color string into a struct containing normalized rgba values.
+/// Parses a given hexadecimal color string into a struct containing normalized RGBA values.
 ///
-///  - Parameters:
-///     - hexString: A string in the format: `#c4320a` or `c4320a`.
+/// - Parameters:
+///    - hexString: A string in one of the following formats: `#c4320a`, `c4320a`, `#c4320aff`, or `c4320aff`.
 ///
-///  - Returns: A struct representing normalized rbga values of type `RGBA` or `nil` if the string can't be parsed.
-func parseHex(_ hexString: String) -> RGBA? {
+/// - Returns: A struct representing normalized RGBA values of type `RGBA`.
+///
+/// - Throws: `HexDecodingError.invalidInputCharacters` if the string contains invalid hexadecimal characters.
+///           `HexDecodingError.invalidInputLength` if the string does not conform to expected length specifications (6 or 8 characters excluding the '#').
+func parseHex(_ hexString: String) throws -> RGBA {
     var hexSanitized = hexString.trimmingCharacters(in: .whitespacesAndNewlines)
     hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
 
-    // Ensure that input is valid
-    let hexSet = CharacterSet(charactersIn: "0123456789abcdef")
+    let hexSet = CharacterSet(charactersIn: "0123456789abcdefABCDEF")
     guard hexSanitized.rangeOfCharacter(from: hexSet.inverted) == nil else {
-        return nil
+        throw HexDecodingError.invalidInputCharacters
     }
 
-    var rgb: UInt64 = 0
-    Scanner(string: hexSanitized).scanHexInt64(&rgb)
-
-    guard hexSanitized.count == 6 else {
-        return nil
+    guard hexSanitized.count == 6 || hexSanitized.count == 8 else {
+        throw HexDecodingError.invalidInputLength
     }
 
-    let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-    let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-    let blue = CGFloat(rgb & 0x0000FF) / 255.0
+    var rgba: UInt64 = 0
+    Scanner(string: hexSanitized).scanHexInt64(&rgba)
 
-    return RGBA(red: red, green: green, blue: blue, alpha: 1.0)
+    let isAlphaChannelHex = hexSanitized.count == 8
+
+    let red = CGFloat((rgba >> (isAlphaChannelHex ? 24 : 16)) & 0xff) / 255.0
+    let green = CGFloat((rgba >> (isAlphaChannelHex ? 16 : 8)) & 0xff) / 255.0
+    let blue = CGFloat((rgba >> (isAlphaChannelHex ? 8 : 0)) & 0xff) / 255.0
+    let alpha = isAlphaChannelHex ? CGFloat(rgba & 0xff) / 255.0 : 1.0
+
+    return RGBA(red: red, green: green, blue: blue, alpha: alpha)
+}
+
+enum NumberDecodingError: Error {
+    case invalidInput
+}
+
+/// Parses a string containing a numerical value potentially suffixed with 'px' into a Double.
+///
+/// - Parameter numberString: The string to parse, e.g., '100px' or '100'.
+/// - Returns: The numerical value as a Double.
+/// - Throws: `NumberDecodingError.invalidInput` if the string cannot be converted to a Double.
+func parseNumber(_ numberString: String) throws -> Double {
+    let sanitized = numberString.replacingOccurrences(of: "px", with: "")
+
+    guard let doubleValue = Double(sanitized) else {
+        throw NumberDecodingError.invalidInput
+    }
+
+    return doubleValue
 }
 
 private let decoder = JSONDecoder()
@@ -134,15 +101,15 @@ private let decoder = JSONDecoder()
 /// {
 ///     "Black opacity": {
 ///         "090": {
-///             "$type": "color",
-///             "$value": "rgba(0, 0, 0, 0.9000)"
+///             "type": "color",
+///             "value": "#000000e6"
 ///         }
 ///      },
 ///     "Secondary": {
 ///         "Orange": {
 ///             "100": {
-///                 "$type": "color",
-///                 "$value": "#ffead5"
+///                 "type": "color",
+///                 "value": "#ffead5"
 ///             }
 ///         }
 ///     }
@@ -151,7 +118,7 @@ private let decoder = JSONDecoder()
 ///   - path: The current nested path as a string, used for recursion. Defaults to an empty string.
 ///
 /// - Returns: A dictionary of type `[String: ColorInfo]` containing the flattened color information.
-/// 
+///
 /// - Complexity: Let n be the total number of keys in the input JSON object, including all nested keys - O(n)
 func extractFlatColorData(from jsonObject: [String: Any], path: String = "") throws -> [String: ColorInfo] {
     var flatMap: [String: ColorInfo] = [:]
@@ -160,8 +127,8 @@ func extractFlatColorData(from jsonObject: [String: Any], path: String = "") thr
         let fullPath = (path.isEmpty ? key : "\(path).\(key)").lowercased()
 
         if let innerDict = value as? [String: Any],
-           innerDict["$type"] as? String != nil,
-           innerDict["$value"] as? String != nil {
+           innerDict["type"] as? String != nil,
+           innerDict["value"] as? String != nil {
 
             let jsonData = try JSONSerialization.data(withJSONObject: value, options: [])
             let colorInfo = try decoder.decode(ColorInfo.self, from: jsonData)
@@ -190,18 +157,18 @@ enum ExtractColorDataError: Error {
 /// {
 ///     "Focus": {
 ///         "--color-focus": {
-///             "$type": "color",
-///             "$value": "{Colors.Secondary.Indigo.700}"
+///             "type": "color",
+///             "value": "{Colors.Secondary.Indigo.700}"
 ///         }
 ///     },
 ///     "Indicator": {
 ///         "--color-indicator-magenta": {
-///             "$type": "color",
-///             "$value": "{Colors.Secondary.Magenta.300}"
+///             "type": "color",
+///             "value": "{Colors.Secondary.Magenta.300}"
 ///         },
 ///         "--color-indicator-yellow": {
-///             "$type": "color",
-///             "$value": "{Colors.Warning.400}"
+///             "type": "color",
+///             "value": "{Colors.Warning.400}"
 ///         }
 ///     }
 /// }
@@ -241,12 +208,12 @@ func extractColorData(from jsonData: Data, using flatMap: [String: ColorInfo]) t
 /// ```
 /// {
 ///     "--border-radius-circle": {
-///         "$type": "number",
-///         "$value": "0.5"
+///         "type": "dimension",
+///         "value": "0.5px"
 ///     },
 ///     "--border-radius-extra-small": {
-///         "$type": "number",
-///         "$value": "2"
+///         "type": "dimension",
+///         "value": "2px"
 ///      }
 /// }
 ///  ```
