@@ -140,7 +140,30 @@ func extractFlatColorData(from jsonObject: [String: Any], path: String = "") thr
         }
     }
 
-    return flatMap
+    return try checkForNestedFlatColorData(in: flatMap)
+}
+
+private func checkForNestedFlatColorData(in map: [String: ColorInfo]) throws -> [String: ColorInfo] {
+    var updatedMap = map
+    for (key, colorInfo) in map {
+        updatedMap[key] = try extractNestedFlatColorData(for: colorInfo, from: updatedMap)
+    }
+    return updatedMap
+}
+
+private func extractNestedFlatColorData(for colorInfo: ColorInfo, from map: [String: ColorInfo]) throws -> ColorInfo {
+    guard colorInfo.rgba == nil, colorInfo.value.starts(with: "{Colors") else { return colorInfo }
+
+    let sourceColorKey = colorInfo.value
+        .removeSubstringIfNotWholeWord("{Colors.")
+        .removeSubstringIfNotWholeWord("}")
+        .lowercased()
+
+    if let sourceColor = map[sourceColorKey] {
+        return try extractNestedFlatColorData(for: sourceColor, from: map)
+    } else {
+        return colorInfo
+    }
 }
 
 enum ExtractColorDataError: Error {

@@ -102,6 +102,39 @@ final class TokenCodegenGeneratorTests: XCTestCase {
         XCTAssertEqual(colorData["black opacity.090"]?.value, "#000000e6")
     }
 
+    func testExtractFlatColorData_whenHasNestedFlatColorData() throws {
+        let json: [String: Any] = [
+            "Base": [
+                "white": [
+                    "type": "color",
+                    "value": "#ffffff"
+                ]
+            ],
+            "LightGray": [
+                "0": [
+                    "type": "color",
+                    "value": "{Colors.Grey.0}"
+                ]
+            ],
+            "Grey": [
+                "0": [
+                    "type": "color",
+                    "value": "{Colors.Base.white}"
+                ]
+            ]
+        ]
+
+        let colorData = try extractFlatColorData(from: json)
+
+        XCTAssertEqual(colorData.keys.count, 3)
+        XCTAssertEqual(colorData["base.white"]?.type, "color")
+        XCTAssertEqual(colorData["base.white"]?.value, "#ffffff")
+        XCTAssertEqual(colorData["lightgray.0"]?.type, "color")
+        XCTAssertEqual(colorData["lightgray.0"]?.value, "#ffffff")
+        XCTAssertEqual(colorData["grey.0"]?.type, "color")
+        XCTAssertEqual(colorData["grey.0"]?.value, "#ffffff")
+    }
+
     func testExtractFlatColorData_whenNestedNodes_parsesCorrectly() throws {
         let json: [String: Any] = [
             "Secondary": [
