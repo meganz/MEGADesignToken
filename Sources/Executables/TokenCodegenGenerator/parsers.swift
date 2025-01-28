@@ -140,30 +140,28 @@ func extractFlatColorData(from jsonObject: [String: Any], path: String = "") thr
         }
     }
 
-    return try checkForNestedFlatColorData(in: flatMap)
+    return try resolveNestedFlatColorData(in: flatMap)
 }
 
-private func checkForNestedFlatColorData(in map: [String: ColorInfo]) throws -> [String: ColorInfo] {
+private func resolveNestedFlatColorData(in map: [String: ColorInfo]) throws -> [String: ColorInfo] {
     var updatedMap = map
     for (key, colorInfo) in map {
-        updatedMap[key] = try extractNestedFlatColorData(for: colorInfo, from: updatedMap)
+        updatedMap[key] = try resolveColorInfo(for: colorInfo, from: updatedMap)
     }
     return updatedMap
 }
 
-private func extractNestedFlatColorData(for colorInfo: ColorInfo, from map: [String: ColorInfo]) throws -> ColorInfo {
-    guard colorInfo.rgba == nil, colorInfo.value.starts(with: "{Colors") else { return colorInfo }
+private func resolveColorInfo(for colorInfo: ColorInfo, from map: [String: ColorInfo]) throws -> ColorInfo {
+    guard colorInfo.rgba == nil, colorInfo.value.starts(with: "{Colors.") else { return colorInfo }
 
     let sourceColorKey = colorInfo.value
-        .removeSubstringIfNotWholeWord("{Colors.")
-        .removeSubstringIfNotWholeWord("}")
+        .replacingOccurrences(of: "{Colors.", with: "")
+        .replacingOccurrences(of: "}", with: "")
         .lowercased()
 
-    if let sourceColor = map[sourceColorKey] {
-        return try extractNestedFlatColorData(for: sourceColor, from: map)
-    } else {
-        return colorInfo
-    }
+    guard let sourceColor = map[sourceColorKey] else { return colorInfo }
+
+    return try resolveColorInfo(for: sourceColor, from: map)
 }
 
 enum ExtractColorDataError: Error {
