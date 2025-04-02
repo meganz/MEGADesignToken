@@ -43,12 +43,14 @@ extension String {
             .lowercased()
     }
 
+    /// Semantic colors have a format of '--color-foo-bar', so we'll make it 'fooBar'
     func sanitizeSemanticVariableName(with parentName: String) -> String {
         self
-            .deletingPrefix("--color-") // Semantic colors have a format of '--color-foo-bar', so we'll make it 'fooBar'
+            .deletingPrefix("--color-")
             .removeSubstringIfNotWholeWord(parentName)
             .replacingOccurrences(of: "-", with: " ")
             .toCamelCase()
+            .appendBackticks()
     }
 
     func removeSubstringIfNotWholeWord(_ substringToRemove: String) -> String {
@@ -72,5 +74,11 @@ extension String {
                 .replacingOccurrences(of: "-", with: " ")
                 .toCamelCase()
         }
+    }
+
+    /// Some of the color names are Swift keywords, like `default`,
+    /// so we need to append backticks to them to avoid compile errors
+    func appendBackticks() -> String {
+        "`\(self)`"
     }
 }
