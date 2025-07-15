@@ -1,91 +1,94 @@
 @testable import TokenCodegenGenerator
-import XCTest
+import Foundation
+import Testing
 
-final class TokenCodegenGeneratorTests: XCTestCase {
+struct TokenCodegenGeneratorTests {
     // MARK: - Parser methods tests
 
-    func testParseInput_whenGivenValidInput_returnsParseInputPayload() throws {
+    @Test func parseInput_whenGivenValidInput_returnsParseInputPayload() throws {
         let input = "[Path/To/tokens.json]"
         let parsed = try parseInput(input)
 
-        XCTAssertEqual(parsed, URL(fileURLWithPath: "Path/To/tokens.json"))
+        #expect(parsed == URL(fileURLWithPath: "Path/To/tokens.json"))
     }
 
-    func testParseInput_whenGivenInvalidArgumentCount_throwsWrongArgumentsError() throws {
+    @Test func parseInput_whenGivenInvalidArgumentCount_throwsWrongArgumentsError() throws {
         let input = "[Path/To/core.json, Path/To/Semantic tokens.Dark.tokens.json]"
 
-        XCTAssertThrowsError(try parseInput(input)) { error in
-            XCTAssertEqual(error as? ParseInputError, .wrongArguments)
-        }
+        #expect(throws: ParseInputError.wrongArguments, performing: {
+            try parseInput(input)
+        })
     }
 
-    func testParseInput_whenGivenInvalidCorePath_throwsWrongArgumentsError() throws {
+    @Test func parseInput_whenGivenInvalidCorePath_throwsWrongArgumentsError() throws {
         let input = "[Path/To/somefile.json]"
 
-        XCTAssertThrowsError(try parseInput(input)) { error in
-            XCTAssertEqual(error as? ParseInputError, .wrongArguments)
-        }
+        #expect(throws: ParseInputError.wrongArguments, performing: {
+            try parseInput(input)
+        })
     }
 
-    func testParseHex_whenGivenValid6DigitHex_correctlyParses() throws {
+    @Test func parseHex_whenGivenValid6DigitHex_correctlyParses() throws {
         let hexString = "#fffaf5"
         let parsed = try parseHex(hexString)
-        XCTAssertEqual(parsed.red, CGFloat(1.0), accuracy: 0.001, "Red component should be 1.0")
-        XCTAssertEqual(parsed.green, CGFloat(0.9804), accuracy: 0.001, "Green component should be approximately 0.9804")
-        XCTAssertEqual(parsed.blue, CGFloat(0.9608), accuracy: 0.001, "Blue component should be approximately 0.9608")
-        XCTAssertEqual(parsed.alpha, CGFloat(1.0), accuracy: 0.001, "Alpha component should be 1.0")
+        #expect(parsed.red.isAlmostEqual(to: CGFloat(1.0), accuracy: 0.001), "Red component should be 1.0")
+        #expect(parsed.green.isAlmostEqual(to: CGFloat(0.9804), accuracy: 0.001), "Green component should be approximately 0.9804")
+        #expect(parsed.blue.isAlmostEqual(to: CGFloat(0.9608), accuracy: 0.001), "Blue component should be approximately 0.9608")
+        #expect(parsed.alpha.isAlmostEqual(to: CGFloat(1.0), accuracy: 0.001), "Alpha component should be 1.0")
     }
 
-    func testParseHex_whenGivenValid8DigitHex_correctlyParses() throws {
+    @Test func parseHex_whenGivenValid8DigitHex_correctlyParses() throws {
         let hexString = "#fffaf5cc"
         let parsed = try parseHex(hexString)
-        XCTAssertEqual(parsed.red, CGFloat(1.0), accuracy: 0.001, "Red component should be 1.0")
-        XCTAssertEqual(parsed.green, CGFloat(0.9804), accuracy: 0.001, "Green component should be approximately 0.9804")
-        XCTAssertEqual(parsed.blue, CGFloat(0.9608), accuracy: 0.001, "Blue component should be approximately 0.9608")
-        XCTAssertEqual(parsed.alpha, CGFloat(0.8), accuracy: 0.001, "Alpha component should be 0.8")
+        #expect(parsed.red.isAlmostEqual(to: CGFloat(1.0), accuracy: 0.001), "Red component should be 1.0")
+        #expect(parsed.green.isAlmostEqual(to: CGFloat(0.9804), accuracy: 0.001), "Green component should be approximately 0.9804")
+        #expect(parsed.blue.isAlmostEqual(to: CGFloat(0.9608), accuracy: 0.001), "Blue component should be approximately 0.9608")
+        #expect(parsed.alpha.isAlmostEqual(to: CGFloat(0.8), accuracy: 0.001), "Alpha component should be 0.8")
     }
 
-    func testParseHex_whenGivenInvalidHex_throwsError() {
+    @Test func parseHex_whenGivenInvalidHex_throwsError() {
         let hexString = "#zzzzzz"
-        XCTAssertThrowsError(try parseHex(hexString)) { error in
-            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputCharacters)
-        }
+        #expect(throws: HexDecodingError.invalidInputCharacters, performing: {
+            try parseHex(hexString)
+        })
     }
 
-    func testParseHex_whenGivenIncompleteHex_throwsError() {
+    @Test func parseHex_whenGivenIncompleteHex_throwsError() {
         let hexString = "#fff"
-        XCTAssertThrowsError(try parseHex(hexString)) { error in
-            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputLength)
-        }
+
+        #expect(throws: HexDecodingError.invalidInputLength, performing: {
+            try parseHex(hexString)
+        })
     }
 
-    func testParseHex_whenGivenEmptyString_throwsError() {
+    @Test func parseHex_whenGivenEmptyString_throwsError() {
         let hexString = ""
-        XCTAssertThrowsError(try parseHex(hexString)) { error in
-            XCTAssertEqual(error as? HexDecodingError, HexDecodingError.invalidInputLength)
-        }
+
+        #expect(throws: HexDecodingError.invalidInputLength, performing: {
+            try parseHex(hexString)
+        })
     }
 
-    func testParseNumber_withPxSuffix_parsesCorrectly() throws {
-        XCTAssertEqual(try parseNumber("44px"), 44.0)
-        XCTAssertEqual(try parseNumber("123.4px"), 123.4)
+    @Test func parseNumber_withPxSuffix_parsesCorrectly() throws {
+        #expect(try parseNumber("44px") == 44.0)
+        #expect(try parseNumber("123.4px") == 123.4)
     }
 
-    func testParseNumber_withoutSuffix_parsesCorrectly() throws {
-        XCTAssertEqual(try parseNumber("150"), 150.0)
+    @Test func parseNumber_withoutSuffix_parsesCorrectly() throws {
+        #expect(try parseNumber("150") == 150.0)
     }
 
-    func testParseNumber_whenInvalidInput_throwsError() {
-        XCTAssertThrowsError(try parseNumber("abcpx")) { error in
-            XCTAssertTrue(error is NumberDecodingError)
-        }
+    @Test func parseNumber_whenInvalidInput_throwsError() {
+        #expect(throws: NumberDecodingError.self, performing: {
+            try parseNumber("abcpx")
+        })
 
-        XCTAssertThrowsError(try parseNumber("123pxabc")) { error in
-            XCTAssertTrue(error is NumberDecodingError)
-        }
+        #expect(throws: NumberDecodingError.self, performing: {
+            try parseNumber("123pxabc")
+        })
     }
 
-    func testExtractFlatColorData_whenLeafNodes_parsesCorrectly() throws {
+    @Test func extractFlatColorData_whenLeafNodes_parsesCorrectly() throws {
         let json: [String: Any] = [
             "Black opacity": [
                 "090": [
@@ -97,12 +100,12 @@ final class TokenCodegenGeneratorTests: XCTestCase {
 
         let colorData = try extractFlatColorData(from: json)
 
-        XCTAssertEqual(colorData.keys.count, 1)
-        XCTAssertEqual(colorData["black opacity.090"]?.type, "color")
-        XCTAssertEqual(colorData["black opacity.090"]?.value, "#000000e6")
+        #expect(colorData.keys.count == 1)
+        #expect(colorData["black opacity.090"]?.type == "color")
+        #expect(colorData["black opacity.090"]?.value == "#000000e6")
     }
 
-    func testExtractFlatColorData_whenHasNestedFlatColorData() throws {
+    @Test func extractFlatColorData_whenHasNestedFlatColorData() throws {
         let json: [String: Any] = [
             "Base": [
                 "white": [
@@ -126,16 +129,16 @@ final class TokenCodegenGeneratorTests: XCTestCase {
 
         let colorData = try extractFlatColorData(from: json)
 
-        XCTAssertEqual(colorData.keys.count, 3)
-        XCTAssertEqual(colorData["base.white"]?.type, "color")
-        XCTAssertEqual(colorData["base.white"]?.value, "#ffffff")
-        XCTAssertEqual(colorData["lightgray.0"]?.type, "color")
-        XCTAssertEqual(colorData["lightgray.0"]?.value, "#ffffff")
-        XCTAssertEqual(colorData["grey.0"]?.type, "color")
-        XCTAssertEqual(colorData["grey.0"]?.value, "#ffffff")
+        #expect(colorData.keys.count == 3)
+        #expect(colorData["base.white"]?.type == "color")
+        #expect(colorData["base.white"]?.value == "#ffffff")
+        #expect(colorData["lightgray.0"]?.type == "color")
+        #expect(colorData["lightgray.0"]?.value == "#ffffff")
+        #expect(colorData["grey.0"]?.type == "color")
+        #expect(colorData["grey.0"]?.value == "#ffffff")
     }
 
-    func testExtractFlatColorData_whenNestedNodes_parsesCorrectly() throws {
+    @Test func extractFlatColorData_whenNestedNodes_parsesCorrectly() throws {
         let json: [String: Any] = [
             "Secondary": [
                 "Orange": [
@@ -149,31 +152,31 @@ final class TokenCodegenGeneratorTests: XCTestCase {
 
         let colorData = try extractFlatColorData(from: json)
 
-        XCTAssertEqual(colorData.keys.count, 1)
-        XCTAssertEqual(colorData["secondary.orange.100"]?.type, "color")
-        XCTAssertEqual(colorData["secondary.orange.100"]?.value, "#ffead5")
+        #expect(colorData.keys.count == 1)
+        #expect(colorData["secondary.orange.100"]?.type == "color")
+        #expect(colorData["secondary.orange.100"]?.value == "#ffead5")
     }
 
-    func testExtractFlatColorData_whenInvalidJSON_doesNotParse() throws {
+    @Test func extractFlatColorData_whenInvalidJSON_doesNotParse() throws {
         let json: [String: Any] = [
             "Black opacity": "This should be a dictionary, not a string."
         ]
         let colorData = try extractFlatColorData(from: json)
-        XCTAssertEqual(colorData.keys.count, 0)
+        #expect(colorData.keys.count == 0)
     }
 
-    func testExtractColorData_whenValidInput_returnsCorrectColorData() throws {
+    @Test func extractColorData_whenValidInput_returnsCorrectColorData() throws {
         let jsonObject: [String: Any] = [
             "Text": [
                 "--color-text-inverse": [
                     "type": "color",
-                    "value": "{Secondary.Indigo.700}"
+                    "value": "{Colors.Secondary.Indigo.700}"
                 ]
             ],
             "Icon": [
                 "--color-icon-disable": [
                     "type": "color",
-                    "value": "{Secondary.Blue.400}"
+                    "value": "{Colors.Secondary.Blue.400}"
                 ]
             ]
         ]
@@ -182,82 +185,134 @@ final class TokenCodegenGeneratorTests: XCTestCase {
 
         let colorData = try extractColorData(from: jsonData, using: flatMap)
 
-        XCTAssertEqual(colorData["Text"]?["--color-text-inverse"]?.value, "#4B0082")
-        XCTAssertEqual(colorData["Icon"]?["--color-icon-disable"]?.value, "#0000FF")
+        #expect(colorData["Text"]?["--color-text-inverse"]?.value == "#4B0082")
+        #expect(colorData["Icon"]?["--color-icon-disable"]?.value == "#0000FF")
     }
 
-    func testExtractColorData_whenInvalidInput_throwsError() throws {
+    @Test func extractColorData_whenRgbaInput_shouldReturnColorWithCorrectAlphaValue() throws {
+        let jsonObject: [String: Any] = [
+            "Button": [
+                "--color-button-warning": [
+                    "type": "color",
+                    "value": "rgba( {Colors.Secondary.Blue.400}, 0.5)"
+                ]
+            ],
+        ]
+        let jsonData = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
+        let flatMap = makeColorsFlatMap()
+
+        let colorData = try extractColorData(from: jsonData, using: flatMap)
+
+        #expect(colorData["Button"]?["--color-button-warning"]?.value == "#0000FF80")
+    }
+
+    @Test func extractColorData_whenInvalidInput_throwsError() throws {
         let jsonObject: [String: Any] = [
             "Text": [
                 "--color-text-inverse": [
                     "type": "color",
-                    "value": "{NonExistentColor}"
+                    "value": "{Colors.NonExistentColor.100}"
                 ]
             ]
         ]
         let jsonData = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
         let flatMap = makeColorsFlatMap()
 
-        XCTAssertThrowsError(try extractColorData(from: jsonData, using: flatMap)) { error in
+        do {
+            _ = try extractColorData(from: jsonData, using: flatMap)
+            Issue.record("Expected `ExtractColorDataError.inputIsWrong` but no error was thrown.")
+        } catch {
             if let extractError = error as? ExtractColorDataError {
                 switch extractError {
                 case .inputIsWrong(let reason):
-                    XCTAssertEqual(reason, "Error: couldn't lookup ColorInfo for --color-text-inverse with value {NonExistentColor}")
+                    #expect(reason == "Error: couldn't lookup ColorInfo for --color-text-inverse with value {Colors.NonExistentColor.100}")
                 }
             } else {
-                XCTFail("Expected `ExtractColorDataError.inputIsWrong` but got \(error)")
+                Issue.record("Expected `ExtractColorDataError.inputIsWrong` but got \(error)")
             }
         }
     }
 
     // MARK: - String Extensions tests
 
-    func testToCGFloat_withValidString_returnsCGFloat() {
-        XCTAssertEqual("1.23".toCGFloat(), CGFloat(1.23))
+    @Test func toCGFloat_withValidString_returnsCGFloat() {
+        #expect("1.23".toCGFloat() == CGFloat(1.23))
     }
 
-    func testToCGFloat_withInvalidString_returnsNil() {
-        XCTAssertNil("abc".toCGFloat())
+    @Test func toCGFloat_withInvalidString_returnsNil() {
+        #expect("abc".toCGFloat() == nil)
     }
 
-    func testToPascalCase_convertsString() {
-        XCTAssertEqual("hello world".toPascalCase(), "HelloWorld")
+    @Test func toPascalCase_convertsString() {
+        #expect("hello world".toPascalCase() == "HelloWorld")
     }
 
-    func testToCamelCase_convertsString() {
-        XCTAssertEqual("Hello World".toCamelCase(), "helloWorld")
+    @Test func toCamelCase_convertsString() {
+        #expect("Hello World".toCamelCase() == "helloWorld")
     }
 
-    func testDeletingPrefix_removesPrefix() {
-        XCTAssertEqual("HelloWorld".deletingPrefix("Hello"), "World")
+    @Test func deletingPrefix_removesPrefix() {
+        #expect("HelloWorld".deletingPrefix("Hello") == "World")
     }
 
-    func testDeletingPrefix_withNonMatchingPrefix_returnsSameString() {
-        XCTAssertEqual("HelloWorld".deletingPrefix("Foo"), "HelloWorld")
+    @Test func deletingPrefix_withNonMatchingPrefix_returnsSameString() {
+        #expect("HelloWorld".deletingPrefix("Foo") == "HelloWorld")
     }
 
-    func testIsNumeric_withNumericString_returnsTrue() {
-        XCTAssertTrue("12345".isNumeric())
+    @Test func isNumeric_withNumericString_returnsTrue() {
+        #expect("12345".isNumeric())
     }
 
-    func testIsNumeric_withNonNumericString_returnsFalse() {
-        XCTAssertFalse("abc".isNumeric())
+    @Test func isNumeric_withNonNumericString_returnsFalse() {
+        #expect("abc".isNumeric() == false)
     }
 
-    func testSanitizeSemanticJSONKey_removesExtraneousInformation() {
-        XCTAssertEqual("{Colors.Secondary.Indigo.700}".sanitizeSemanticJSONKey(), "secondary.indigo.700")
+    @Test func sanitizeSemanticJSONKey_removesExtraneousInformation() {
+        #expect("{Colors.Secondary.Indigo.700}".sanitizeSemanticJSONKey() == "secondary.indigo.700")
     }
 
-    func testSanitizeSemanticVariableName_removesExtraneousInformation_andAddBackticks() {
-        XCTAssertEqual("--color-parent-foo-bar".sanitizeSemanticVariableName(with: "parent"), "`fooBar`")
+    @Test func sanitizeSemanticJSONKey_removesExtraneousInformation_forTokensWithRgba() {
+        #expect("rgba( {Colors.Grey.500}, 0.1)".sanitizeSemanticJSONKey() == "grey.500")
     }
 
-    func testSanitizeNumberVariableName_withNumericString_prependsUnderscore() {
-        XCTAssertEqual("123".sanitizeNumberVariableName(), "_123")
+    @Test func sanitizeSemanticVariableName_removesExtraneousInformation_andAddBackticks() {
+        #expect("--color-parent-foo-bar".sanitizeSemanticVariableName(with: "parent") == "`fooBar`")
     }
 
-    func testSanitizeNumberVariableName_withNonNumericString_removesExtraneousInformation() {
-        XCTAssertEqual("--border-radius-foo-bar".sanitizeNumberVariableName(), "fooBar")
+    @Test func sanitizeNumberVariableName_withNumericString_prependsUnderscore() {
+        #expect("123".sanitizeNumberVariableName() == "_123")
+    }
+
+    @Test func sanitizeNumberVariableName_withNonNumericString_removesExtraneousInformation() {
+        #expect("--border-radius-foo-bar".sanitizeNumberVariableName() == "fooBar")
+    }
+
+    @Test func alphaValueFromSemanticColors_withValidRgba_returnsAlpha() {
+        #expect("rgba( {Colors.Grey.500}, 0.3)".alphaValueFromSemanticColors() == 0.3)
+    }
+
+    @Test func isHexColor() {
+        #expect("#FFFFFF".isHexColor == true)
+        #expect("#000000".isHexColor == true)
+        #expect("#12345678".isHexColor == true)
+        #expect("123456".isHexColor == false)
+        #expect("#GGGGGG".isHexColor == false)
+        #expect("notAHex".isHexColor == false)
+    }
+
+    @Test func updateHexAlpha_withValidAlpha_updatesHex() {
+        let hex = "#ff0000"
+        #expect(hex.updateHexAlpha(alpha: 0.5) == "#ff000080")
+    }
+
+    @Test func updateHexAlpha_withNilAlpha_returnsOriginalHex() {
+        let hex = "#ff000080"
+        #expect(hex.updateHexAlpha(alpha: nil) == hex)
+    }
+
+    @Test func updateHexAlpha_withInvalidHex_returnsOriginalString() {
+        let hex = "notAHex"
+        #expect(hex.updateHexAlpha(alpha: 0.5) == hex)
     }
 }
 
@@ -275,5 +330,11 @@ private extension TokenCodegenGeneratorTests {
             "success.400": .init(type: "color", value: "#008000"),
             "error.400": .init(type: "color", value: "#FF0000")
         ]
+    }
+}
+
+extension CGFloat {
+    func isAlmostEqual(to value: CGFloat, accuracy: CGFloat = .ulpOfOne) -> Bool {
+        abs(self - value) <= accuracy
     }
 }
