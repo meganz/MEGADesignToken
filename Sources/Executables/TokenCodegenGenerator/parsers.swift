@@ -152,14 +152,12 @@ private func resolveNestedFlatColorData(in map: [String: ColorInfo]) throws -> [
 }
 
 private func resolveColorInfo(for colorInfo: ColorInfo, from map: [String: ColorInfo]) throws -> ColorInfo {
-    guard colorInfo.rgba == nil, colorInfo.value.starts(with: "{Colors.") else { return colorInfo }
-
-    let sourceColorKey = colorInfo.value
-        .replacingOccurrences(of: "{Colors.", with: "")
-        .replacingOccurrences(of: "}", with: "")
-        .lowercased()
-
-    guard let sourceColor = map[sourceColorKey] else { return colorInfo }
+    guard
+        colorInfo.rgba == nil,
+        let sourceColor = map[colorInfo.value.sanitizeSemanticJSONKey()]
+    else {
+        return colorInfo
+    }
 
     return try resolveColorInfo(for: sourceColor, from: map)
 }
@@ -210,7 +208,8 @@ func extractColorData(from jsonData: Data, using flatMap: [String: ColorInfo]) t
                 let reason = "Error: couldn't lookup ColorInfo for \(semanticKey) with value \(semanticInfo.value)"
                 throw ExtractColorDataError.inputIsWrong(reason: reason)
             }
-            semanticInfo.value = coreColorInfo.value
+            let alphaValue = semanticInfo.value.alphaValueFromSemanticColors()
+            semanticInfo.value = coreColorInfo.value.updateHexAlpha(alpha: alphaValue)
             categoryValue[semanticKey] = semanticInfo
         }
         colorData[categoryKey] = categoryValue
