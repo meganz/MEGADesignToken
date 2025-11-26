@@ -1,0 +1,164 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.2.1 effective-5.10 (swiftlang-6.2.1.4.8 clang-1700.4.4.1)
+// swift-module-flags: -target arm64-apple-ios16.6-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name MEGADesignToken
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.1
+import Swift
+import SwiftUI
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public enum TokenSpacing {
+  public static let _1: CoreFoundation.CGFloat
+  public static let _2: CoreFoundation.CGFloat
+  public static let _3: CoreFoundation.CGFloat
+  public static let _4: CoreFoundation.CGFloat
+  public static let _5: CoreFoundation.CGFloat
+  public static let _6: CoreFoundation.CGFloat
+  public static let _7: CoreFoundation.CGFloat
+  public static let _8: CoreFoundation.CGFloat
+  public static let _9: CoreFoundation.CGFloat
+  public static let _10: CoreFoundation.CGFloat
+  public static let _11: CoreFoundation.CGFloat
+  public static let _12: CoreFoundation.CGFloat
+  public static let _13: CoreFoundation.CGFloat
+  public static let _14: CoreFoundation.CGFloat
+  public static let _15: CoreFoundation.CGFloat
+  public static let _16: CoreFoundation.CGFloat
+  public static let _17: CoreFoundation.CGFloat
+}
+public enum TokenRadius {
+  public static let circle: CoreFoundation.CGFloat
+  public static let extraSmall: CoreFoundation.CGFloat
+  public static let small: CoreFoundation.CGFloat
+  public static let medium: CoreFoundation.CGFloat
+  public static let large: CoreFoundation.CGFloat
+  public static let extraLarge: CoreFoundation.CGFloat
+}
+public enum TokenColors {
+  public enum Background {
+    public static let blur: UIKit.UIColor
+    public static let inverse: UIKit.UIColor
+    public static let page: UIKit.UIColor
+    public static let surface1: UIKit.UIColor
+    public static let surface2: UIKit.UIColor
+    public static let surface3: UIKit.UIColor
+    public static let surfaceInverseAccent: UIKit.UIColor
+    public static let surfaceTransparent: UIKit.UIColor
+  }
+  public enum Border {
+    public static let brand: UIKit.UIColor
+    public static let disabled: UIKit.UIColor
+    public static let strong: UIKit.UIColor
+    public static let strongSelected: UIKit.UIColor
+    public static let subtle: UIKit.UIColor
+    public static let subtleSelected: UIKit.UIColor
+  }
+  public enum Brand {
+    public static let containerDefault: UIKit.UIColor
+    public static let containerHover: UIKit.UIColor
+    public static let containerPressed: UIKit.UIColor
+    public static let `default`: UIKit.UIColor
+    public static let hover: UIKit.UIColor
+    public static let on: UIKit.UIColor
+    public static let onContainer: UIKit.UIColor
+    public static let pressed: UIKit.UIColor
+  }
+  public enum Button {
+    public static let brand: UIKit.UIColor
+    public static let brandHover: UIKit.UIColor
+    public static let brandPressed: UIKit.UIColor
+    public static let disabled: UIKit.UIColor
+    public static let error: UIKit.UIColor
+    public static let errorHover: UIKit.UIColor
+    public static let errorPressed: UIKit.UIColor
+    public static let outline: UIKit.UIColor
+    public static let outlineBackgroundHover: UIKit.UIColor
+    public static let outlineHover: UIKit.UIColor
+    public static let outlinePressed: UIKit.UIColor
+    public static let primary: UIKit.UIColor
+    public static let primaryHover: UIKit.UIColor
+    public static let primaryPressed: UIKit.UIColor
+    public static let secondary: UIKit.UIColor
+    public static let secondaryHover: UIKit.UIColor
+    public static let secondaryPressed: UIKit.UIColor
+  }
+  public enum Components {
+    public static let interactive: UIKit.UIColor
+    public static let selectionControl: UIKit.UIColor
+    public static let selectionControlAlt: UIKit.UIColor
+    public static let toastBackground: UIKit.UIColor
+  }
+  public enum Focus {
+    public static let focus: UIKit.UIColor
+  }
+  public enum Icon {
+    public static let accent: UIKit.UIColor
+    public static let brand: UIKit.UIColor
+    public static let disabled: UIKit.UIColor
+    public static let inverse: UIKit.UIColor
+    public static let inverseAccent: UIKit.UIColor
+    public static let inverseSecondary: UIKit.UIColor
+    public static let onColor: UIKit.UIColor
+    public static let onColorDisabled: UIKit.UIColor
+    public static let primary: UIKit.UIColor
+    public static let secondary: UIKit.UIColor
+  }
+  public enum Indicator {
+    public static let blue: UIKit.UIColor
+    public static let green: UIKit.UIColor
+    public static let indigo: UIKit.UIColor
+    public static let magenta: UIKit.UIColor
+    public static let orange: UIKit.UIColor
+    public static let pink: UIKit.UIColor
+    public static let yellow: UIKit.UIColor
+  }
+  public enum Link {
+    public static let inverse: UIKit.UIColor
+    public static let primary: UIKit.UIColor
+    public static let visited: UIKit.UIColor
+  }
+  public enum Neutral {
+    public static let containerDefault: UIKit.UIColor
+    public static let containerHover: UIKit.UIColor
+    public static let containerPressed: UIKit.UIColor
+    public static let `default`: UIKit.UIColor
+    public static let hover: UIKit.UIColor
+    public static let onContainer: UIKit.UIColor
+    public static let onGrey: UIKit.UIColor
+    public static let pressed: UIKit.UIColor
+  }
+  public enum Notifications {
+    public static let notificationError: UIKit.UIColor
+    public static let notificationInfo: UIKit.UIColor
+    public static let notificationSuccess: UIKit.UIColor
+    public static let notificationWarning: UIKit.UIColor
+  }
+  public enum Support {
+    public static let error: UIKit.UIColor
+    public static let info: UIKit.UIColor
+    public static let success: UIKit.UIColor
+    public static let warning: UIKit.UIColor
+  }
+  public enum Text {
+    public static let accent: UIKit.UIColor
+    public static let brand: UIKit.UIColor
+    public static let disabled: UIKit.UIColor
+    public static let error: UIKit.UIColor
+    public static let info: UIKit.UIColor
+    public static let inverse: UIKit.UIColor
+    public static let inverseAccent: UIKit.UIColor
+    public static let inverseSecondary: UIKit.UIColor
+    public static let onColor: UIKit.UIColor
+    public static let onColorDisabled: UIKit.UIColor
+    public static let placeholder: UIKit.UIColor
+    public static let primary: UIKit.UIColor
+    public static let secondary: UIKit.UIColor
+    public static let success: UIKit.UIColor
+    public static let warning: UIKit.UIColor
+  }
+}
+extension UIKit.UIColor {
+  public var swiftUI: SwiftUICore.Color {
+    get
+  }
+}

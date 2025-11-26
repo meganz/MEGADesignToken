@@ -5,43 +5,23 @@ import PackageDescription
 let package = Package(
     name: "MEGADesignToken",
     platforms: [
-        .iOS(.v14),
+        .iOS(.v16),
         .macOS(.v12)
     ],
     products: [
         .library(
             name: "MEGADesignToken",
             targets: ["MEGADesignToken"]
-        ),
-        .plugin(
-            name: "TokenCodegen",
-            targets: ["TokenCodegen"]
         )
     ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-syntax", exact: "509.0.0")
-    ],
     targets: [
-        .target(
+        .binaryTarget(
             name: "MEGADesignToken",
-            plugins: ["TokenCodegen"]
-        ),
-        .plugin(
-            name: "TokenCodegen",
-            capability: .buildTool(),
-            dependencies: ["TokenCodegenGenerator"]
-        ),
-        .executableTarget(
-            name: "TokenCodegenGenerator",
-            dependencies: [
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax")
-            ],
-            path: "Sources/Executables/TokenCodegenGenerator"
+            path: "Framework/MEGADesignToken/xcframeworks/MEGADesignToken.xcframework"
         ),
         .testTarget(
             name: "MEGADesignTokenTests",
-            dependencies: ["MEGADesignToken", "TokenCodegenGenerator"]
+            dependencies: ["MEGADesignToken"]
         )
     ]
 )
